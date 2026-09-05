@@ -14,18 +14,18 @@ const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 const PublicShowcase = () => {
   const navigate = useNavigate();
   const { addToCart, getCartCount } = useCart();
-  const { user, isLoggedIn: authIsLoggedIn } = useAuth(); 
+  const { user, isLoggedIn: authIsLoggedIn } = useAuth();
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("ALL");
-  
+
   // MANTENIDO: Estados para controlar el modal flotante del primer mensaje (Rama: chat)
   const [showContactModal, setShowContactModal] = useState(false);
   const [firstMessage, setFirstMessage] = useState("");
   const { unreadCount } = useNotifications();
-  
+
   const apiUrl = import.meta.env.VITE_API_URL;
 
   const CATEGORY_LABELS = {
@@ -43,11 +43,11 @@ const PublicShowcase = () => {
     // 2. Si es null, buscamos en el localStorage directamente
     const savedUser = localStorage.getItem('user');
     const userEmail = (user?.email || (savedUser ? JSON.parse(savedUser).email : null))?.toLowerCase().trim();
-    
+
     if (!userEmail || !products || products.length === 0) return false;
-  
-    return products.some(product => 
-      product.ownerEmail && 
+
+    return products.some(product =>
+      product.ownerEmail &&
       product.ownerEmail.toLowerCase().trim() === userEmail
     );
   }, [products, user]); // Al incluir 'user', esto se recalculará cuando el contexto cargue
@@ -80,14 +80,14 @@ const PublicShowcase = () => {
 
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
-      const matchesSearch = 
+      const matchesSearch =
         product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.description.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesCategory = selectedCategory === "ALL" || product.category === selectedCategory;
 
-      const isNotMine = !user || !user.email || !product.ownerEmail || 
-                        product.ownerEmail.toLowerCase() !== user.email.toLowerCase();
+      const isNotMine = !user || !user.email || !product.ownerEmail ||
+        product.ownerEmail.toLowerCase() !== user.email.toLowerCase();
 
       const hasStock = product.stock > 0;
 
@@ -99,7 +99,7 @@ const PublicShowcase = () => {
     if (filteredProducts.length === 0) return [];
     const totalStock = filteredProducts.reduce((acc, prod) => acc + (prod.stock || 0), 0);
     const averageStock = totalStock / filteredProducts.length;
-  
+
     return filteredProducts
       .filter(product => (product.stock || 0) < averageStock)
       .sort((a, b) => (b.stock || 0) - (a.stock || 0))
@@ -116,7 +116,7 @@ const PublicShowcase = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userId'); 
+    localStorage.removeItem('userId');
     localStorage.removeItem('userEmail');
     window.location.reload();
   };
@@ -132,7 +132,7 @@ const PublicShowcase = () => {
 
   const checkIfOwner = useCallback((product) => {
     if (!product) return false;
-    
+
     // Validación cruzada estricta por Email u ID
     if (currentUserEmail && product.ownerEmail && product.ownerEmail.toLowerCase() === currentUserEmail.toLowerCase()) {
       return true;
@@ -145,13 +145,13 @@ const PublicShowcase = () => {
   }, [currentUserId, currentUserEmail]);
 
   const handleAddToCartClick = (e, product) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     if (!isLoggedIn) {
       alert("¡Hola! Para añadir productos al carrito debes iniciar sesión con tu cuenta Sabana.");
       navigate('/login');
       return;
     }
-    
+
     addToCart(product);
   };
 
@@ -214,7 +214,7 @@ const PublicShowcase = () => {
   // Componente Modal de Detalle de Producto Unificado
   const ProductModal = ({ product, onClose }) => {
     if (!product) return null;
-    
+
     const isOwner = checkIfOwner(product);
 
     // Estados locales para almacenar la info asincrónica del vendedor y sus reseñas
@@ -230,7 +230,7 @@ const PublicShowcase = () => {
           // 1. Traer estadísticas del vendedor
           const statsRes = await fetch(`${apiUrl}/api/v1/reviews/seller-stats/${product.ownerEmail}`);
           const statsData = statsRes.ok ? await statsRes.json() : { fullName: "Miembro Sabana", totalSales: 0 };
-          
+
           // 2. Traer reseñas del producto
           const reviewRes = await fetch(`${apiUrl}/api/v1/reviews/product/${product.id}`);
           const revData = reviewRes.ok ? await reviewRes.json() : { reviews: [], count: 0, average: null };
@@ -251,24 +251,24 @@ const PublicShowcase = () => {
 
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-sabana-blue/40 backdrop-blur-md" onClick={onClose} />
-        
+
         {/* Contenedor adaptado con scroll vertical global interno para el modal */}
         <div className="relative bg-white w-full max-w-5xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh] md:max-h-[85vh] overflow-y-auto animate-in fade-in zoom-in duration-300">
-          
+
           <button onClick={onClose} className="absolute top-4 right-4 z-10 bg-white/80 p-2 rounded-full text-sabana-blue hover:bg-sabana-blue hover:text-white transition-all shadow-md">
             <X size={20} />
           </button>
-          
+
           {/* LADO IZQUIERDO: Imagen Fija */}
           <div className="md:w-3/4 h-64 md:h-auto bg-sabana-light md:sticky md:top-0">
-            <img 
-              src={product.imageUrl || logoSabana} 
+            <img
+              src={product.imageUrl || logoSabana}
               alt={product.title}
               className="w-full h-full object-cover"
               onError={(e) => { e.target.src = logoSabana; }}
             />
           </div>
-          
+
           {/* LADO DERECHO: Toda la información con scroll natural hacia abajo */}
           <div className="p-8 md:w-1/2 flex flex-col space-y-6">
             <div>
@@ -276,13 +276,12 @@ const PublicShowcase = () => {
                 <span className="text-[10px] font-bold bg-sabana-softGold/10 text-sabana-blue-light px-2 py-1 rounded-md uppercase">
                   {CATEGORY_LABELS[product.category] || product.category || 'Otros'}
                 </span>
-                <span className={`text-[10px] font-bold px-2 py-1 rounded-md uppercase ${
-                  product.condition === 'NEW' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
-                }`}>
+                <span className={`text-[10px] font-bold px-2 py-1 rounded-md uppercase ${product.condition === 'NEW' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                  }`}>
                   {product.condition === 'NEW' ? 'Nuevo' : 'Usado'}
                 </span>
               </div>
-              
+
               <h2 className="text-2xl font-black text-sabana-blue mb-3">{product.title}</h2>
               <p className="text-gray-600 text-sm leading-relaxed">
                 {product.description || "Este producto es ofrecido por un miembro de la comunidad Sabana."}
@@ -296,10 +295,10 @@ const PublicShowcase = () => {
                   <p className="text-[10px] font-bold text-gray-400 uppercase">Precio</p>
                   <p className="text-2xl font-black text-sabana-blue">{formatCurrency(product.price)}</p>
                 </div>
-                
+
                 {/* Agregado: Botón de contactar dinámico para iniciar chat */}
                 {!isOwner && (
-                  <button 
+                  <button
                     onClick={() => {
                       if (!isLoggedIn) {
                         alert("¡Hola! Para contactar al vendedor debes iniciar sesión con tu cuenta Sabana.");
@@ -314,14 +313,13 @@ const PublicShowcase = () => {
                   </button>
                 )}
               </div>
-              
-              <button 
+
+              <button
                 onClick={(e) => handleAddToCartClick(e, product)}
-                className={`w-full py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 ${
-                  isOwner
-                    ? "bg-gray-400 text-white cursor-not-allowed opacity-80 shadow-none"
-                    : "bg-sabana-blue text-white hover:bg-sabana-blue-hover"
-                }`}
+                className={`w-full py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 ${isOwner
+                  ? "bg-gray-400 text-white cursor-not-allowed opacity-80 shadow-none"
+                  : "bg-sabana-blue text-white hover:bg-sabana-blue-hover"
+                  }`}
                 disabled={isOwner}
               >
                 <ShoppingCart size={18} />
@@ -334,7 +332,7 @@ const PublicShowcase = () => {
               <h3 className="text-xs font-black text-sabana-blue uppercase tracking-widest flex items-center gap-1.5">
                 <UserCheck size={16} className="text-sabana-blue-light" /> Información del Vendedor
               </h3>
-              
+
               <div className="bg-sabana-light/50 p-4 rounded-2xl border border-sabana-blue/5">
                 <p className="text-sm font-bold text-sabana-blue">{sellerStats.fullName}</p>
                 <p className="text-xs text-gray-500 mt-0.5">
@@ -377,10 +375,10 @@ const PublicShowcase = () => {
                       <div>
                         <div className="flex gap-0.5 text-sabana-softGold">
                           {Array(5).fill(0).map((_, i) => (
-                            <Star 
-                              key={i} 
-                              size={14} 
-                              className={i < Math.round(Number(reviewData.average)) ? 'fill-sabana-softGold text-sabana-softGold' : 'text-gray-200'} 
+                            <Star
+                              key={i}
+                              size={14}
+                              className={i < Math.round(Number(reviewData.average)) ? 'fill-sabana-softGold text-sabana-softGold' : 'text-gray-200'}
                             />
                           ))}
                         </div>
@@ -433,10 +431,10 @@ const PublicShowcase = () => {
           </div>
           <span className="hidden lg:block text-white font-bold tracking-tight">Marketplace Unisabana</span>
         </div>
-        
-        <div className="flex-1 max-w-3xl mx-8 flex gap-3"> 
+
+        <div className="flex-1 max-w-3xl mx-8 flex gap-3">
           <div className="relative hidden md:block group">
-            <select 
+            <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="appearance-none bg-white/10 hover:bg-white/20 text-white border-none rounded-2xl pl-4 pr-10 py-3 text-xs font-bold focus:bg-white focus:text-sabana-blue outline-none cursor-pointer transition-all duration-300 min-w-[160px] shadow-sm"
@@ -450,15 +448,15 @@ const PublicShowcase = () => {
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-white/60 group-hover:text-white transition-colors duration-300">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m6 9 6 6 6-6"/>
+                <path d="m6 9 6 6 6-6" />
               </svg>
             </div>
           </div>
 
           <div className="relative group flex-1">
-            <input 
-              type="text" 
-              placeholder="¿Qué estás buscando hoy?" 
+            <input
+              type="text"
+              placeholder="¿Qué estás buscando hoy?"
               className="w-full py-2.5 px-12 rounded-2xl bg-white/10 text-white placeholder:text-white/60 hover:bg-white/20 focus:bg-white focus:text-sabana-blue focus:outline-none transition-all duration-300 shadow-inner text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -466,8 +464,8 @@ const PublicShowcase = () => {
             <Search className="absolute left-4 top-2.5 text-white/50 group-hover:text-white/80 group-focus-within:text-sabana-blue w-5 h-5 transition-colors duration-300" />
 
             {(searchTerm || selectedCategory !== "ALL") && (
-              <button 
-                onClick={() => {setSearchTerm(""); setSelectedCategory("ALL");}}
+              <button
+                onClick={() => { setSearchTerm(""); setSelectedCategory("ALL"); }}
                 className="absolute right-4 top-2.5 p-1 rounded-full text-white/50 hover:text-red-400 group-focus-within:text-sabana-blue/40 group-focus-within:hover:text-red-500 transition-all duration-200 z-10"
                 title="Limpiar búsqueda"
               >
@@ -478,25 +476,25 @@ const PublicShowcase = () => {
         </div>
 
         <div className="flex items-center gap-5 text-white">
-        <button 
-          onClick={() => navigate('/notifications')} 
-          className="relative p-2.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-2xl text-slate-600 transition-all active:scale-95 group"
-          title="Mis Notificaciones"
-        >
-          <Bell size={20} className="group-hover:rotate-12 transition-transform" />
-          
-          
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center px-1 animate-pulse border-2 border-white">
-              {unreadCount}
-            </span>
-          )}
-        </button>
+          <button
+            onClick={() => navigate('/notifications')}
+            className="relative p-2.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-2xl text-slate-600 transition-all active:scale-95 group"
+            title="Mis Notificaciones"
+          >
+            <Bell size={20} className="group-hover:rotate-12 transition-transform" />
+
+
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center px-1 animate-pulse border-2 border-white">
+                {unreadCount}
+              </span>
+            )}
+          </button>
 
           {/* MANTENIDO: Botón de chats en el Navbar */}
-          <div 
-            onClick={handleChatNavigation} 
-            className="relative cursor-pointer group" 
+          <div
+            onClick={handleChatNavigation}
+            className="relative cursor-pointer group"
             title="Mis Chats / Mensajes"
           >
             <MessageSquare size={22} className="group-hover:text-sabana-softGold transition-colors" />
@@ -513,7 +511,7 @@ const PublicShowcase = () => {
 
           <div className="flex items-center gap-4 border-l border-white/20 pl-5">
             <div className="flex flex-col gap-2">
-              <div 
+              <div
                 role="button"
                 tabIndex={0}
                 onClick={() => {
@@ -562,39 +560,39 @@ const PublicShowcase = () => {
 
       {/* HERO SECTION */}
       <section className="relative h-[400px] flex items-center justify-center overflow-hidden">
-        <img 
-          src="https://myunigate.com/wp-content/uploads/2025/06/University-of-La-Sabana.jpg" 
-          alt="Campus La Sabana" 
+        <img
+          src="https://uvirtual.unisabana.edu.co/images/nuestra_universidad_la_sabana_675w.webp"
+          alt="Campus La Sabana"
           className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-sabana-blue/90 to-transparent"></div>
         <div className="relative z-10 container mx-auto px-10 flex flex-col items-start">
-           <img src={unisabanalogowhite} alt="Universidad de La Sabana" className="h-20 mb-6 drop-shadow-lg" />
-           <h1 className="text-4xl md:text-5xl font-bold text-white max-w-xl leading-tight">
-             El mercado oficial de la comunidad <span className="text-sabana-softGold">Sabana</span>
-           </h1>
-           <p className="text-white/80 mt-4 text-lg max-w-md">Compra y vende artículos de forma segura dentro de tu campus universitario.</p>
+          <img src={unisabanalogowhite} alt="Universidad de La Sabana" className="h-20 mb-6 drop-shadow-lg" />
+          <h1 className="text-4xl md:text-5xl font-bold text-white max-w-xl leading-tight">
+            El mercado oficial de la comunidad <span className="text-sabana-softGold">Sabana</span>
+          </h1>
+          <p className="text-white/80 mt-4 text-lg max-w-md">Compra y vende artículos de forma segura dentro de tu campus universitario.</p>
         </div>
       </section>
 
       <main className="container mx-auto px-6 py-16">
-      {hasMyOwnProducts && (
-              <button
-                onClick={() => navigate('/PersonalInventory')} 
-                className="mb-3 inline-flex items-center gap-2 px-4 py-1.5 bg-sabana-blue-light/10 border border-sabana-blue-light/300 text-sabana-blue-light text-xs font-black uppercase tracking-widest rounded-full cursor-pointer hover:bg-sabana-softGold/20 hover:scale-[1.02] active:scale-[0.98] transition-all group duration-200"
-                title="Ir a gestionar mis publicaciones"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-sabana-blue-light animate-pulse"></span>
-                Tienes productos publicados en el Marketplace
-                <span className="transform group-hover:translate-x-1 transition-transform inline-block ml-1 font-bold">
-                  →
-                </span>
-              </button>
-            )}
+        {hasMyOwnProducts && (
+          <button
+            onClick={() => navigate('/PersonalInventory')}
+            className="mb-3 inline-flex items-center gap-2 px-4 py-1.5 bg-sabana-blue-light/10 border border-sabana-blue-light/300 text-sabana-blue-light text-xs font-black uppercase tracking-widest rounded-full cursor-pointer hover:bg-sabana-softGold/20 hover:scale-[1.02] active:scale-[0.98] transition-all group duration-200"
+            title="Ir a gestionar mis publicaciones"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-sabana-blue-light animate-pulse"></span>
+            Tienes productos publicados en el Marketplace
+            <span className="transform group-hover:translate-x-1 transition-transform inline-block ml-1 font-bold">
+              →
+            </span>
+          </button>
+        )}
         {/* SECCIÓN MÁS POPULARES */}
         {sortedPopular.length > 0 && (
           <section className="mb-20 animate-in fade-in duration-500">
-            
+
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h2 className="text-3xl font-black text-sabana-blue tracking-tight">Más populares en el campus</h2>
@@ -605,9 +603,9 @@ const PublicShowcase = () => {
               {sortedPopular.map((product) => {
                 const isOwner = checkIfOwner(product);
                 return (
-                  <div 
-                    key={`popular-${product.id}`} 
-                    onClick={() => setSelectedProduct(product)} 
+                  <div
+                    key={`popular-${product.id}`}
+                    onClick={() => setSelectedProduct(product)}
                     className="group bg-white rounded-3xl p-4 shadow-sm hover:shadow-2xl transition-all duration-500 border border-transparent hover:border-sabana-softGold/20 cursor-pointer flex flex-col justify-between"
                   >
                     <div>
@@ -627,11 +625,10 @@ const PublicShowcase = () => {
                           <span className="text-[10px] font-bold text-sabana-blue-light uppercase tracking-widest">
                             {CATEGORY_LABELS[product.category] || product.category || 'Otros'}
                           </span>
-                          <span className={`text-[10px] font-bold uppercase transition-all ${
-                            product.stock === 1 ? 'text-red-500 animate-pulse bg-red-50 px-2 py-0.5 rounded-md' : 'text-gray-400'}`}>
+                          <span className={`text-[10px] font-bold uppercase transition-all ${product.stock === 1 ? 'text-red-500 animate-pulse bg-red-50 px-2 py-0.5 rounded-md' : 'text-gray-400'}`}>
                             {product.stock === 1 ? '¡Última unidad!' : `${product.stock || 0} disp.`}
                           </span>
-                        </div> 
+                        </div>
                         <h3 className="text-lg font-bold text-sabana-blue mt-1 line-clamp-1">{product.title}</h3>
                       </div>
                     </div>
@@ -639,13 +636,12 @@ const PublicShowcase = () => {
                     <div className="px-2 mt-4">
                       <div className="flex items-center justify-between">
                         <p className="text-xl font-bold text-sabana-blue">{formatCurrency(product.price)}</p>
-                        <div 
+                        <div
                           onClick={(e) => handleAddToCartClick(e, product)}
-                          className={`p-2 rounded-xl transition-colors cursor-pointer ${
-                            isOwner
-                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                              : "bg-sabana-light text-sabana-blue hover:bg-sabana-blue hover:text-white"
-                          }`}
+                          className={`p-2 rounded-xl transition-colors cursor-pointer ${isOwner
+                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            : "bg-sabana-light text-sabana-blue hover:bg-sabana-blue hover:text-white"
+                            }`}
                         >
                           <ShoppingCart size={18} />
                         </div>
@@ -663,82 +659,80 @@ const PublicShowcase = () => {
           <h2 className="text-3xl font-bold text-sabana-blue tracking-tight">Explorar Productos</h2>
           <div className="h-1 flex-1 mx-8 bg-sabana-blue/5 rounded-full"></div>
         </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-        {loading ? (
-          Array(4).fill(0).map((_, i) => (
-            <div key={i} className="h-80 bg-gray-200 animate-pulse rounded-3xl" />
-          ))
-        ) : filteredProducts.length > 0 ? (
-          filteredProducts.map((product) => {
-            const isOwner = checkIfOwner(product);
-            return (
-              <div 
-                key={product.id} 
-                onClick={() => setSelectedProduct(product)} 
-                className="group bg-white rounded-3xl p-4 shadow-sm hover:shadow-2xl transition-all cursor-pointer border border-transparent hover:border-sabana-softGold/20 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="aspect-square rounded-2xl overflow-hidden mb-4 bg-sabana-light">
-                    <img
-                      src={product.imageUrl || logoSabana}
-                      alt={product.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      onError={(e) => { e.target.src = logoSabana; }}
-                    />
-                  </div>
-                  <div className="px-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-bold text-sabana-blue-light uppercase tracking-widest">
-                        {CATEGORY_LABELS[product.category] || product.category || 'Otros'}
-                      </span>
-                      <span className={`text-[10px] font-bold uppercase transition-all ${
-                        product.stock === 1 ? 'text-red-500 animate-pulse bg-red-50 px-2 py-0.5 rounded-md' : 'text-gray-400'
-                      }`}>
-                        {product.stock === 1 ? '¡Última unidad!' : `${product.stock || 0} disp.`}
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-bold text-sabana-blue mt-1 line-clamp-1">{product.title}</h3>
-                  </div>
-                </div>
 
-                <div className="px-2 mt-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xl font-bold text-sabana-blue">{formatCurrency(product.price)}</p>
-                    <div 
-                      onClick={(e) => handleAddToCartClick(e, product)}
-                      className={`p-2 rounded-xl transition-colors ${
-                        isOwner
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          {loading ? (
+            Array(4).fill(0).map((_, i) => (
+              <div key={i} className="h-80 bg-gray-200 animate-pulse rounded-3xl" />
+            ))
+          ) : filteredProducts.length > 0 ? (
+            filteredProducts.map((product) => {
+              const isOwner = checkIfOwner(product);
+              return (
+                <div
+                  key={product.id}
+                  onClick={() => setSelectedProduct(product)}
+                  className="group bg-white rounded-3xl p-4 shadow-sm hover:shadow-2xl transition-all cursor-pointer border border-transparent hover:border-sabana-softGold/20 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="aspect-square rounded-2xl overflow-hidden mb-4 bg-sabana-light">
+                      <img
+                        src={product.imageUrl || logoSabana}
+                        alt={product.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        onError={(e) => { e.target.src = logoSabana; }}
+                      />
+                    </div>
+                    <div className="px-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-sabana-blue-light uppercase tracking-widest">
+                          {CATEGORY_LABELS[product.category] || product.category || 'Otros'}
+                        </span>
+                        <span className={`text-[10px] font-bold uppercase transition-all ${product.stock === 1 ? 'text-red-500 animate-pulse bg-red-50 px-2 py-0.5 rounded-md' : 'text-gray-400'
+                          }`}>
+                          {product.stock === 1 ? '¡Última unidad!' : `${product.stock || 0} disp.`}
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-bold text-sabana-blue mt-1 line-clamp-1">{product.title}</h3>
+                    </div>
+                  </div>
+
+                  <div className="px-2 mt-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xl font-bold text-sabana-blue">{formatCurrency(product.price)}</p>
+                      <div
+                        onClick={(e) => handleAddToCartClick(e, product)}
+                        className={`p-2 rounded-xl transition-colors ${isOwner
                           ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                           : "bg-sabana-light text-sabana-blue hover:bg-sabana-blue hover:text-white"
-                      }`}
-                    >
-                      <ShoppingCart size={18} />
+                          }`}
+                      >
+                        <ShoppingCart size={18} />
+                      </div>
                     </div>
                   </div>
                 </div>
+              );
+            })
+          ) : (
+            <div className="col-span-full py-20 flex flex-col items-center justify-center text-center bg-white rounded-[40px] shadow-sm border border-dashed border-gray-200 animate-in fade-in zoom-in duration-500">
+              <div className="bg-sabana-light p-6 rounded-full mb-6">
+                <Search size={48} className="text-sabana-blue/20" />
               </div>
-            );
-          })
-        ) : (
-          <div className="col-span-full py-20 flex flex-col items-center justify-center text-center bg-white rounded-[40px] shadow-sm border border-dashed border-gray-200 animate-in fade-in zoom-in duration-500">
-            <div className="bg-sabana-light p-6 rounded-full mb-6">
-              <Search size={48} className="text-sabana-blue/20" />
+              <h3 className="text-2xl font-bold text-sabana-blue mb-2">No encontramos nada...</h3>
+              <p className="text-gray-500 max-w-md mx-auto mb-8 px-6">
+                No hay productos que coincidan con tu búsqueda actual "<span className="font-bold text-sabana-blue-light">{searchTerm}</span>"
+                {selectedCategory !== "ALL" && ` en la categoría ${CATEGORY_LABELS[selectedCategory]}`}.
+              </p>
+              <button
+                onClick={() => { setSearchTerm(""); setSelectedCategory("ALL"); }}
+                className="bg-sabana-blue text-white px-8 py-3 rounded-2xl font-bold hover:bg-sabana-blue-hover transition-all active:scale-95 shadow-lg shadow-sabana-blue/20"
+              >
+                Ver todos los productos
+              </button>
             </div>
-            <h3 className="text-2xl font-bold text-sabana-blue mb-2">No encontramos nada...</h3>
-            <p className="text-gray-500 max-w-md mx-auto mb-8 px-6">
-              No hay productos que coincidan con tu búsqueda actual "<span className="font-bold text-sabana-blue-light">{searchTerm}</span>" 
-              {selectedCategory !== "ALL" && ` en la categoría ${CATEGORY_LABELS[selectedCategory]}`}.
-            </p>
-            <button 
-              onClick={() => {setSearchTerm(""); setSelectedCategory("ALL");}}
-              className="bg-sabana-blue text-white px-8 py-3 rounded-2xl font-bold hover:bg-sabana-blue-hover transition-all active:scale-95 shadow-lg shadow-sabana-blue/20"
-            >
-              Ver todos los productos
-            </button>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
       </main>
 
       {/* FOOTER */}
@@ -763,7 +757,7 @@ const PublicShowcase = () => {
               <h4 className="font-bold mb-6 text-sabana-softGold uppercase tracking-widest text-xs">Universidad</h4>
               <ul className="space-y-4 text-sm text-white/80">
                 <li className="flex items-center gap-2 hover:text-sabana-softGold cursor-pointer transition-colors">
-                    Campus Chía <ExternalLink size={14} />
+                  Campus Chía <ExternalLink size={14} />
                 </li>
                 <li className="hover:text-sabana-softGold cursor-pointer transition-colors">Directorio Estudiantil</li>
               </ul>
